@@ -1,85 +1,72 @@
-KelpX-AppBuilder
+In your base app, create a "maps" function returning a hashref of your maps table
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+sub maps {
+    {
+        '/' => Wyse::Controller::Root->can('index'),
+        '/login' => Wyse::Controller::Auth->can('login'),
+    }
+}
 
-A README file is required for CPAN modules since CPAN extracts the README
-file from a module distribution so that people browsing the archive
-can use it to get an idea of the module's uses. It is usually a good idea
-to provide version information here so that people can decide whether
-fixes for the module are worth downloading.
+In your base app, put the assets and views into a lib/auto directory
 
+ie: MyApp/lib/auto/MyApp/views
+    MyApp/lib/auto/MyApp/assets
 
-INSTALLATION
+This is so File::ShareDir knows where to find them. It also means we need to change the config.pl a little.
+"use" your base module
 
-To install this module, run the following commands:
+  use BaseApp;
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+Then set the path to your views/assets
+  my $path = File::ShareDir::module_dir( 'BaseApp' );
 
-SUPPORT AND DOCUMENTATION
+With your assets
 
-After installing, you can find documentation for this module with the
-perldoc command.
+  middleware_init => {
+        Static => {
+            path => qw{^/assets/|^/apps/},
+            root => $path,
+        },
+      
+        ...
+  }
 
-    perldoc KelpX::AppBuilder
+The problem I've found with this is that root doesn't appear to work with array refs, so I don't think you can have more than one path like the templates.. This doesn't have to be a major issue - just stick all your assets in the same place.
 
-You can also look for information at:
+Now you can tell your templates where they are, but also make sure local ones can still be found.
 
-    RT, CPAN's request tracker (report bugs here)
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=KelpX-AppBuilder
+ # Enable UTF-8 in Template
+ 'Template::Toolkit' => {
+      ENCODING => 'utf8',
+      INCLUDE_PATH => [
+        './views',
+        $path . '/views'
+      ],
+      RELATIVE => 1,
+      TAG_STYLE => 'asp',
+  },
 
-    AnnoCPAN, Annotated CPAN documentation
-        http://annocpan.org/dist/KelpX-AppBuilder
+Now, in your new app, we need to include the AppBuilder stuff, so 
+  
+  use KelpX::AppBuilder;
 
-    CPAN Ratings
-        http://cpanratings.perl.org/d/KelpX-AppBuilder
+Then inside your "build" function
 
-    Search CPAN
-        http://search.cpan.org/dist/KelpX-AppBuilder/
+  sub build {
+      my $self = shift;
+      my $r    = $self->routes;
 
+      ## local routes
+      $r->add('/home', sub { "Hey there, this is from MyApp!" });
 
-LICENSE AND COPYRIGHT
+      ## add in base app routes
+      my $builder = KelpX::AppBuilder->new('BaseApp');
+      $builder->load_controllers(
+          'Root',
+          'Auth',
+      )->add_maps($r);
+  }
 
-Copyright (C) 2014 Brad Haywood
+At the moment you need to tell it what Controllers to load. Eventually AppBuilder will be clever enough to work it out :P
 
-This program is free software; you can redistribute it and/or modify it
-under the terms of the the Artistic License (2.0). You may obtain a
-copy of the full license at:
-
-L<http://www.perlfoundation.org/artistic_license_2_0>
-
-Any use, modification, and distribution of the Standard or Modified
-Versions is governed by this Artistic License. By using, modifying or
-distributing the Package, you accept this license. Do not use, modify,
-or distribute the Package, if you do not accept this license.
-
-If your Modified Version has been derived from a Modified Version made
-by someone other than you, you are nevertheless required to ensure that
-your Modified Version complies with the requirements of this license.
-
-This license does not grant you the right to use any trademark, service
-mark, tradename, or logo of the Copyright Holder.
-
-This license includes the non-exclusive, worldwide, free-of-charge
-patent license to make, have made, use, offer to sell, sell, import and
-otherwise transfer the Package with respect to any patent claims
-licensable by the Copyright Holder that are necessarily infringed by the
-Package. If you institute patent litigation (including a cross-claim or
-counterclaim) against any party alleging that the Package constitutes
-direct or contributory patent infringement, then this Artistic License
-to you shall terminate on the date that such litigation is filed.
-
-Disclaimer of Warranty: THE PACKAGE IS PROVIDED BY THE COPYRIGHT HOLDER
-AND CONTRIBUTORS "AS IS' AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES.
-THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE, OR NON-INFRINGEMENT ARE DISCLAIMED TO THE EXTENT PERMITTED BY
-YOUR LOCAL LAW. UNLESS REQUIRED BY LAW, NO COPYRIGHT HOLDER OR
-CONTRIBUTOR WILL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, OR
-CONSEQUENTIAL DAMAGES ARISING IN ANY WAY OUT OF THE USE OF THE PACKAGE,
-EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+Now once you run your new app as normal, you should be able to view the paths from your base app!
