@@ -3,6 +3,32 @@ package KelpX::AppBuilder;
 use 5.010;
 use warnings;
 use strict;
+use Module::Find 'useall';
+
+sub import {
+    my ($me, @opts) = @_;
+    my $class = caller;
+    if (@opts and $opts[0] eq 'Base') {
+        my @controllers = useall "${class}::Controller";
+        for my $c (@controllers) {
+            eval "use $c";
+            say "Loading controller $c into $class";
+        }
+
+        {
+            no strict 'refs';
+            *{"${class}::build"} = sub {
+                my ($self) = @_;
+                my $r    = $self->routes;
+
+                my $maps = $class->maps;
+                for my $method (keys %$maps) {
+                    $r->add($method, $maps->{$method});
+                }
+            };
+        }
+    }
+}
 
 sub new {
     my ($class, $base) = @_;
