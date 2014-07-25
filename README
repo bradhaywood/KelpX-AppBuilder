@@ -2,8 +2,8 @@ In your base app, create a "maps" function returning a hashref of your maps tabl
 
 sub maps {
     {
-        '/' => Wyse::Controller::Root->can('index'),
-        '/login' => Wyse::Controller::Auth->can('login'),
+        '/' => BaseApp::Controller::Root->can('index'),
+        '/login' => BaseApp::Controller::Auth->can('login'),
     }
 }
 
