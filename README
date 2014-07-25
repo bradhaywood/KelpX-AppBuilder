@@ -1,3 +1,9 @@
+First off, "use" the AppBuilder in your Base App, making sure to pass the argument 'Base'
+
+  use KelpX::AppBuilder 'Base';
+
+This will create the build method for you based on what you put in "maps". See below.
+
 In your base app, create a "maps" function returning a hashref of your maps table
 
 sub maps {
