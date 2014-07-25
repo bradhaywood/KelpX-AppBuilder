@@ -4,6 +4,8 @@ sub maps {
     {
         '/' => BaseApp::Controller::Root->can('index'),
         '/login' => BaseApp::Controller::Auth->can('login'),
+        '/accounts/manage/:id' => { to => BaseApp::Controller::Accounts->can('manage'), bridge => 1 },
+        '/accounts/manage/:id/view', BaseApp::Controller::Accounts->can('view'),
     }
 }
 
