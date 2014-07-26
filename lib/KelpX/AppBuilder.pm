@@ -5,6 +5,8 @@ use warnings;
 use strict;
 use Module::Find 'useall';
 
+our $VERSION = '0.001';
+
 sub import {
     my ($me, @opts) = @_;
     my $class = caller;
