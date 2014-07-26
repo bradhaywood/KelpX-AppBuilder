@@ -12,7 +12,7 @@ sub import {
         my @controllers = useall "${class}::Controller";
         for my $c (@controllers) {
             eval "use $c";
-            say "Loading controller $c into $class";
+            say "Loading controller $c";
         }
 
         {
@@ -38,6 +38,11 @@ sub new {
         print STDERR "[error] Failed to open $base: $!\n";
         exit 5;
     }
+
+    my @controllers = useall "${base}::Controller";
+    eval "use $_"
+        for @controllers;
+
 
     return bless $self, $class;
 }
