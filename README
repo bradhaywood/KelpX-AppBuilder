@@ -68,13 +68,7 @@ Then inside your "build" function
       $r->add('/home', sub { "Hey there, this is from MyApp!" });
 
       ## add in base app routes
-      my $builder = KelpX::AppBuilder->new('BaseApp');
-      $builder->load_controllers(
-          'Root',
-          'Auth',
-      )->add_maps($r);
+      KelpX::AppBuilder->new('BaseApp')->add_maps($r);
   }
-
-At the moment you need to tell it what Controllers to load. Eventually AppBuilder will be clever enough to work it out :P
 
 Now once you run your new app as normal, you should be able to view the paths from your base app!
