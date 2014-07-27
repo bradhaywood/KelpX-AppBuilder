@@ -80,6 +80,12 @@ sub add_maps {
         }
         my $maps = $mod->maps;
         foreach my $path (keys %$maps) {
+            if ($path eq 'auto') {
+                my $root = "${mod}::Controller::Root";
+                $r->add('/:page' => { to => $root->can('auto'), bridge => 1 });
+                next;
+            }
+
             $r->add($path, $maps->{$path});
         }
 
