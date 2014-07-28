@@ -29,8 +29,8 @@ build_requires (
 );
 
 requires (
-   #'ABC'              => 1.6,
-   #'Foo::Bar::Module' => 5.0401,
+    'File::ShareDir' => 0,
+    'Module::Find' => 0,
 );
 
 install_as_cpan;
