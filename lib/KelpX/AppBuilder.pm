@@ -47,6 +47,27 @@ Then, in your base application
 
   1;
 
+<B>Optionally</B> you can include an 'auto' method into your application. The auto method gets called before every single page, so it's handy to use to ensure a user is logged in. You can do this by adding 
+  'auto' => 1
+
+to your maps hash ref. It will handle the route line and bridging for you. Don't forget to create the auto method in BaseApp::Controller::Root if you enable this though! An example:
+
+  package BaseApp::Controller::Root;
+
+  sub auto {
+      my ($self) = @_;
+      my $url    = $self->named->{page};
+      unless ($url eq 'login') {
+          if (my $user = $self->user) {
+            return 1;
+          }
+
+          return;
+      }
+
+      return 1;
+  }
+
 We'll call our new app 'TestApp' (original, eh?). Copy across your config from BaseApp into your TestApp conf, then use File::ShareDir so your Template::Toolkit knows where to find the views for both applications.
 
   my $path = File::ShareDir::module_dir( 'BaseApp' );
