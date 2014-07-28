@@ -1,74 +1,102 @@
-First off, "use" the AppBuilder in your Base App, making sure to pass the argument 'Base'
+NAME
+    KelpX::AppBuilder - Create re-usable apps with Kelp
 
-  use KelpX::AppBuilder 'Base';
+SYNOPSIS
+    KelpX::AppBuilder makes it trivial to reuse your entire route map and
+    views in an entirely new Kelp application. You create a base app, which
+    can still be run normally, and from there you can start a new project
+    and reuse everything from your base app without duplicating things.
 
-This will create the build method for you based on what you put in "maps". See below.
+USAGE
+    First off, we'll need to modify the structure so File::ShareDir knows
+    where to find our views/assets globally. It should look something like
+    this
 
-In your base app, create a "maps" function returning a hashref of your maps table
+      BaseApp/lib/auto/BaseApp/views
+      BaseApp/lib/auto/BaseApp/assets
 
-sub maps {
-    {
-        '/' => BaseApp::Controller::Root->can('index'),
-        '/login' => BaseApp::Controller::Auth->can('login'),
-        '/accounts/manage/:id' => { to => BaseApp::Controller::Accounts->can('manage'), bridge => 1 },
-        '/accounts/manage/:id/view', BaseApp::Controller::Accounts->can('view'),
-    }
-}
+    You don't have to use the same names, just the structure.
 
-In your base app, put the assets and views into a lib/auto directory
+    Then, in your base application
 
-ie: MyApp/lib/auto/MyApp/views
-    MyApp/lib/auto/MyApp/assets
-
-This is so File::ShareDir knows where to find them. It also means we need to change the config.pl a little.
-"use" your base module
-
-  use BaseApp;
-
-Then set the path to your views/assets
-  my $path = File::ShareDir::module_dir( 'BaseApp' );
-
-With your assets
-
-  middleware_init => {
-        Static => {
-            path => qw{^/assets/|^/apps/},
-            root => $path,
-        },
-      
-        ...
-  }
-
-The problem I've found with this is that root doesn't appear to work with array refs, so I don't think you can have more than one path like the templates.. This doesn't have to be a major issue - just stick all your assets in the same place.
-
-Now you can tell your templates where they are, but also make sure local ones can still be found.
-
- # Enable UTF-8 in Template
- 'Template::Toolkit' => {
-      ENCODING => 'utf8',
-      INCLUDE_PATH => [
-        './views',
-        $path . '/views'
-      ],
-      RELATIVE => 1,
-      TAG_STYLE => 'asp',
-  },
-
-Now, in your new app, we need to include the AppBuilder stuff, so 
+      package BaseApp;
   
-  use KelpX::AppBuilder;
+      use Kelp::Base 'Kelp';
+      use KelpX::AppBuilder 'Base';
 
-Then inside your "build" function
+      # we don't need a build method, KelpX::AppBuilder will automatically
+      # create it based on what we define in the maps method
+      sub maps {
+          {
+              '/' => BaseApp::Controller::Root->can('index'),
+              '/login' => BaseApp::Controller::Auth->can('login'),
+              '/accounts/manage/:id' => {
+                  to      => BaseApp::Controller::Accounts->can('manage'),
+                  bridge  => 1
+              },
+              '/accounts/manage/:id/view', BaseApp::Controller::Accounts->can('view'), 
+          }
+      }
 
-  sub build {
-      my $self = shift;
-      my $r    = $self->routes;
+      1;
 
-      ## local routes
-      $r->add('/home', sub { "Hey there, this is from MyApp!" });
+    We'll call our new app 'TestApp' (original, eh?). Copy across your
+    config from BaseApp into your TestApp conf, then use File::ShareDir so
+    your Template::Toolkit knows where to find the views for both
+    applications.
 
-      ## add in base app routes
-      KelpX::AppBuilder->new('BaseApp')->add_maps($r);
-  }
+      my $path = File::ShareDir::module_dir( 'BaseApp' );
+      middleware_init => {
+            Static => {
+                path => qw{^/assets/|^/apps/},
+                root => $path,
+            },
+      
+            ...
+      },
 
-Now once you run your new app as normal, you should be able to view the paths from your base app!
+      # use local views, and the one from BaseApp
+      'Template::Toolkit' => {
+          ENCODING => 'utf8',
+          INCLUDE_PATH => [
+            './views',
+            $path . '/views'
+          ],
+          RELATIVE => 1,
+          TAG_STYLE => 'asp',
+      },
+
+    The final part is loading your BaseApp controllers into your TestApp.
+    That's fairly easy.
+
+      package TestApp;
+
+      use Kelp::Base 'Kelp';
+      use KelpX::AppBuilder;
+
+      sub build {
+          my ($self) = @_;
+          my $r = $self->routes;
+      
+          KelpX::AppBuilder->new('BaseApp')->add_maps($r);
+
+          # now you can add TestApp's own routing
+          $r->add('/hello', sub { "Hello, world!" });
+      }
+
+      1;
+
+    Congratulations. You've just reused the controllers from your BaseApp.
+
+PLEASE NOTE
+    This module is still a work in progress, so I would advise against using
+    KelpX::AppBuilder in a production environment. I'm still looking at ways
+    to make KelpX::AppBuilder more user friendly, but unfortunately reusing
+    an application is not a simple process :-)
+
+AUTHOR
+    Brad Haywood <brad@perlpowered.com>
+
+LICENSE
+    You may distribute this code under the same terms as Perl itself.
+
