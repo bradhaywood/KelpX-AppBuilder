@@ -14,7 +14,7 @@ sub import {
         my @controllers = useall "${class}::Controller";
         for my $c (@controllers) {
             eval "use $c";
-            say "Loading controller $c";
+            say "=> Loaded controller $c";
         }
 
         {
