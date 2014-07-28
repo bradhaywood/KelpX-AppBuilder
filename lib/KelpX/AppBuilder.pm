@@ -37,7 +37,7 @@ sub new {
     my $self = { name => $base };
     eval "use $base";
     if ($@) {
-        print STDERR "[error] Failed to open $base: $!\n";
+        print STDERR "[error] Failed to open $base: $@\n";
         exit 5;
     }
 
@@ -54,7 +54,7 @@ sub load_controllers {
     for my $c (@controllers) {
         eval "use $self->{name}::Controller::$c";
         if ($@) {
-            die "[error] Could not load controller $c: $!\n";
+            die "[error] Could not load controller $c: $@\n";
         }
     }
 
