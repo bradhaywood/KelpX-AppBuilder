@@ -47,7 +47,7 @@ Then, in your base application
 
   1;
 
-<B>Optionally</B> you can include an 'auto' method into your application. The auto method gets called before every single page, so it's handy to use to ensure a user is logged in. You can do this by adding 
+B<Optionally> you can include an 'auto' method into your application. The auto method gets called before every single page, so it's handy to use to ensure a user is logged in. You can do this by adding 
   'auto' => 1
 
 to your maps hash ref. It will handle the route line and bridging for you. Don't forget to create the auto method in BaseApp::Controller::Root if you enable this though! An example:
