@@ -6,7 +6,7 @@ use strict;
 use Module::Find 'useall';
 use File::ShareDir 'module_dir';
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
 =head1 NAME
 
