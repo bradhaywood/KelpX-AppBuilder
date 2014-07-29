@@ -4,6 +4,7 @@ use 5.010;
 use warnings;
 use strict;
 use Module::Find 'useall';
+use File::ShareDir 'module_dir';
 
 our $VERSION = '0.002';
 
@@ -68,13 +69,13 @@ to your maps hash ref. It will handle the route line and bridging for you. Don't
       return 1;
   }
 
-We'll call our new app 'TestApp' (original, eh?). Copy across your config from BaseApp into your TestApp conf, then use File::ShareDir so your Template::Toolkit knows where to find the views for both applications.
+We'll call our new app 'TestApp' (original, eh?). Copy across your config from BaseApp into your TestApp conf, then tell KelpX::AppBuilder what module it should use as its base dir. Once this is done, it will generate a method called C<base_path> for you to use.
 
-  my $path = File::ShareDir::module_dir( 'BaseApp' );
+  use KelpX::AppBuilder Config => 'BaseApp';
   middleware_init => {
         Static => {
             path => qw{^/assets/|^/apps/},
-            root => $path,
+            root => base_path(),
         },
       
         ...
@@ -85,7 +86,7 @@ We'll call our new app 'TestApp' (original, eh?). Copy across your config from B
       ENCODING => 'utf8',
       INCLUDE_PATH => [
         './views',
-        $path . '/views'
+        base_path() . '/views'
       ],
       RELATIVE => 1,
       TAG_STYLE => 'asp',
@@ -135,6 +136,24 @@ sub import {
                     $r->add($method, $maps->{$method});
                 }
             };
+        }
+    }
+
+    if (@opts and $opts[0] eq 'Config') {
+        if (scalar @opts > 1) {
+            my $mod = $opts[1];
+            eval "use $mod";
+            if ($@) {
+                die "[error] Could not load base module $mod into config: $@\n";
+            }
+
+            {
+                no strict 'refs';
+                *{"${class}::base_path"} = sub { return module_dir($mod) };
+            }
+        }
+        else {
+            die "[error] Config import option expects a base app name\n";
         }
     }
 }
