@@ -65,14 +65,14 @@ sub auto {
 }
 ```
 
-We'll call our new app 'TestApp' (original, eh?). Copy across your config from BaseApp into your TestApp conf, then use File::ShareDir so your Template::Toolkit knows where to find the views for both applications.
+We'll call our new app 'TestApp' (original, eh?). Copy across your config from BaseApp into your TestApp conf, then tell KelpX::AppBuilder what module it should use as its base dir. Once this is done, it will generate a method called `base_path` for you to use.
 
 ```perl
-my $path = File::ShareDir::module_dir( 'BaseApp' );
+use KelpX::AppBuilder Config => 'BaseApp';
 middleware_init => {
       Static => {
           path => qw{^/assets/|^/apps/},
-          root => $path,
+          root => base_path(),
       },
     
       ...
@@ -83,7 +83,7 @@ middleware_init => {
     ENCODING => 'utf8',
     INCLUDE_PATH => [
       './views',
-      $path . '/views'
+      base_path() . '/views'
     ],
     RELATIVE => 1,
     TAG_STYLE => 'asp',
