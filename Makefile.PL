@@ -31,8 +31,12 @@ build_requires (
 requires (
     'File::ShareDir' => 0,
     'Module::Find' => 0,
+    'Probe::Perl' => 0,
+    'File::Basename' => 0,
+    'IPC::Cmd' => 0,
 );
 
+install_script glob('bin/*');
 install_as_cpan;
 auto_install;
 WriteAll;
