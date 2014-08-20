@@ -120,9 +120,12 @@ sub import {
     my $class = caller;
     if (@opts and $opts[0] eq 'Base') {
         my @controllers = useall "${class}::Controller";
-        for my $c (@controllers) {
-            eval "use $c";
-            say "=> Loaded controller $c";
+        {
+            no strict 'refs';
+            for my $c (@controllers) {
+                eval "use $c" unless scalar keys %{"${c}::"};
+                say "=> Loaded controller $c";
+            }
         }
 
         {
@@ -142,18 +145,44 @@ sub import {
     if (@opts and $opts[0] eq 'Config') {
         if (scalar @opts > 1) {
             my $mod = $opts[1];
-            eval "use $mod";
+            {
+                no strict 'refs';
+                eval "use $mod" unless scalar keys %{"${mod}::"};
+            }
             if ($@) {
                 die "[error] Could not load base module $mod into config: $@\n";
             }
 
             {
                 no strict 'refs';
+                my $hsh;
+                my $con  = "${mod}::Config";
+                eval "use $con";
+                if ($@) { die "(!) Could not load config module '$con': $@"; $hsh = {}; }
+                $hsh  = $con->config();
                 *{"${class}::base_path"} = sub { return module_dir($mod) };
+                *{"${class}::base_config"} = sub { return $hsh; };
             }
+
         }
         else {
             die "[error] Config import option expects a base app name\n";
+        }
+    }
+
+    if (@opts and $opts[0] eq 'BaseConfig') {
+        if (scalar @opts > 1) {
+            my $mod = $opts[1];
+            {
+                no strict 'refs';
+                eval "use $mod";
+                if ($@) { die "[error] Could not load base mod: ${mod}\n"; }
+    
+                *{"${class}::base_path"} = sub { return module_dir($mod); };
+            }
+        }
+        else {
+            die "[error] BaseConfig import option expects base app name\n";
         }
     }
 }
