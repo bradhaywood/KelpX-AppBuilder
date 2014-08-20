@@ -1,0 +1,89 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use 5.010;
+use Probe::Perl;
+use File::Basename 'dirname';
+use IPC::Cmd 'can_run';
+
+sub usage {
+    print STDERR "Usage: $0 app <new app> extends <base app>\n";
+    exit 1;
+}
+
+sub write_config {
+    my ($base) = @_;
+    open my $fh, "+>", "conf/config.pl" or do {
+        say "(!) Aborting: Could not open conf/config.pl for writing";
+        exit 4;
+    };
+
+    say $fh "use KelpX::AppBuilder Config => '${base}';";
+    say $fh "return base_config();";
+
+    close $fh;
+}
+
+sub write_module {
+    my ($app, $base) = @_;
+    open my $fh, "+>", "lib/${app}.pm" or do {
+        say "(!) Aborting: Could not open lib/${app}.pm for writing";
+        exit 5;
+    };
+
+    say $fh "package ${app};\n";
+    say $fh "use Kelp::Base 'Kelp';";
+    say $fh "use KelpX::AppBuilder;\n";
+    say $fh "sub build {";
+    say $fh "  my (\$self) = \@_;";
+    say $fh "  my \$r      = \$self->routes;";
+    say $fh "  KelpX::AppBuilder->new('${base}')->add_maps(\$r);";
+    say $fh "  \$r->add('/home', sub { say \"Hello, World!\" });";
+    say $fh "}\n";
+    say $fh "1;\n__END__";
+
+    close $fh;
+}
+
+unless (my $can = can_run('Kelp')) {
+    say "(!) Aborting: Please install Kelp first";
+    exit 3;
+}
+
+if (@ARGV) {
+    my $app;
+    my $base;
+
+    while (my $arg = shift @ARGV) {
+        for ($arg) {
+            if (/app/)      { $app  = shift @ARGV; }
+            if (/extends/)  { $base = shift @ARGV; }
+        }
+    }
+
+    unless ($app and $base) {
+        usage();
+    }
+
+    say "=> Building '${app}', based on '${base}'";
+
+    if (-d $app) {
+        say "(!) Aborting: Directory '${app}' already exists";
+        exit 2;
+    }
+
+    mkdir $app;
+    chdir $app;
+    my $perl_path = dirname(Probe::Perl->find_perl_interpreter);
+    system("${perl_path}/Kelp ${app}");
+    say "=> Writing configuration";
+    unlink "conf/config.pl";
+    write_config($base);
+
+    say "=> Writing ${app}.pm";
+    unlink "lib/${app}.pm";
+    write_module($app, $base);
+}
+else {
+    usage();
+}
