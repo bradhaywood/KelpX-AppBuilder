@@ -47,7 +47,7 @@ sub build {
 ## Creating an app for your base
 
 We'll call our new app 'TestApp' (original, eh?).
-All your app really needs to provide is a function called <C>maps&lt;/C>. This should 
+All your app really needs to provide is a function called `maps`. This should 
 return a hash reference of your routes.
 Don't forget to include the absolute path to your controllers (ie: Using the + symbol)
 
@@ -71,14 +71,14 @@ And that's all there is to it.
 # SHARING CONFIG BETWEEN BASEAPP AND ITS CHILDREN
 
 You can share config from your base application so you don't have to rewrite stuff you want 
-to reuse. In your child applications <C>conf/config.pl&lt;/c>, just add
+to reuse. In your child applications `conf/config.pl`, just add
 
 ```perl
 use KelpX::AppBuilder Config => 'BaseApp';
 return base_config();
 ```
 
-This will load everything from <C>BaseApp::Config::config()&lt;/C>. So let's create that.
+This will load everything from `BaseApp::Config::config()`. So let's create that.
 
 ```perl
 package BaseApp::Config;
