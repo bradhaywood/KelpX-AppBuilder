@@ -72,7 +72,7 @@ And that's all there is to it.
 
 One thing you're probably going to want to do is use something like Template::Toolkit to process 
 your views in apps that aren't the base. Fortunately `KelpX::AppBuilder::Utils` will deploy 
-`module_dir` from File::ShareDir for you, so in your controllers something like this could happen:
+`module_dir` from [File::ShareDir](https://metacpan.org/pod/File::ShareDir) for you, so in your controllers something like this could happen:
 
 ```perl
 package TestApp::Controller::Root;
@@ -106,11 +106,3 @@ Brad Haywood <brad@geeksware.com>
 # LICENSE
 
 You may distribute this code under the same terms as Perl itself.
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 221:
-
-    Deleting unknown formatting code M<>
