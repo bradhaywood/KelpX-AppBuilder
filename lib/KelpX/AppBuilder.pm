@@ -9,7 +9,7 @@ use File::ShareDir 'module_dir';
 use Import::Into;
 use Kelp::Base;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 sub import {
     my ($me, @opts) = @_;
@@ -18,7 +18,6 @@ sub import {
         no strict 'refs';
         eval "use Kelp::Routes";
         Kelp::Base->import::into($class, 'Kelp');
-        eval "use Kelp::Base 'Kelp';";
         *{"Kelp::Routes::kelpx_appbuilder"} = sub { KelpX::AppBuilder::Object->new(shift); };
     }
     if (@opts and $opts[0] eq 'Base') {
@@ -217,58 +216,30 @@ Don't forget to include the absolute path to your controllers (ie: Using the + s
 
 And that's all there is to it.
 
-=head1 SHARING CONFIG BETWEEN BASEAPP AND ITS CHILDREN
+=head2 Using templates from apps
 
-You can share config from your base application so you don't have to rewrite stuff you want 
-to reuse. In your child applications C<conf/config.pl>, just add
+One thing you're probably going to want to do is use something like Template::Toolkit to process 
+your views in apps that aren't the base. Fortunately C<KelpX::AppBuilder::Utils> will deploy 
+C<module_dir> from M<File::ShareDir> for you, so in your controllers something like this could happen:
 
-  use KelpX::AppBuilder Config => 'BaseApp';
-  return base_config();
+  package TestApp::Controller::Root;
 
-This will load everything from C<BaseApp::Config::config()>. So let's create that.
+  use KelpX::AppBuilder::Utils;
 
-  package BaseApp::Config;
+  # create some way to access the view path globally
+  # so you don't have to keep writing it
+  sub view_path { module_dir('TestApp') . '/views/' }
 
-  sub config {
-      return {
-          modules      => [qw/Template JSON Logger/],
-          modules_init => {
-
-              # One log for errors and one for debug
-              Logger => {
-                  outputs => [
-                      [
-                          'File',
-                          name      => 'debug',
-                          filename  => 'log/debug.log',
-                          min_level => 'debug',
-                          mode      => '>>',
-                          newline   => 1,
-                          binmode   => ":encoding(UTF-8)"
-                      ], [
-                          'File',
-                          name      => 'error',
-                          filename  => 'log/error.log',
-                          min_level => 'error',
-                          mode      => '>>',
-                          newline   => 1,
-                          binmode   => ":encoding(UTF-8)"
-                      ],
-                  ]
-              },
-
-              # JSON prints pretty
-              JSON => {
-                  pretty => 1
-              },
-
-              # Enable UTF-8 in Template
-              Template => {
-                  encoding => 'utf8'
-              }
-          }
-      };
+  sub index {
+      my ($self) = @_;
+      $self->template(view_path() . 'index.tt');
   }
+
+So now when the index method is called from TestApp, it'll search C<lib/auto/TestApp/views> for its 
+templates.
+
+This is probably your best option for now, as KelpX::AppBuilder does not have a safe way to load app 
+configuration just yet (working on it!).
 
 =head1 PLEASE NOTE
 
