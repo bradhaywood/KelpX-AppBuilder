@@ -220,7 +220,7 @@ And that's all there is to it.
 
 One thing you're probably going to want to do is use something like Template::Toolkit to process 
 your views in apps that aren't the base. Fortunately C<KelpX::AppBuilder::Utils> will deploy 
-C<module_dir> from M<File::ShareDir> for you, so in your controllers something like this could happen:
+C<module_dir> from L<File::ShareDir> for you, so in your controllers something like this could happen:
 
   package TestApp::Controller::Root;
 
