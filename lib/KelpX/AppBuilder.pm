@@ -6,6 +6,8 @@ use strict;
 use KelpX::AppBuilder::Object;
 use Module::Find 'useall';
 use File::ShareDir 'module_dir';
+use Import::Into;
+use Kelp::Base;
 
 our $VERSION = '0.004';
 
@@ -15,6 +17,8 @@ sub import {
     {
         no strict 'refs';
         eval "use Kelp::Routes";
+        Kelp::Base->import::into($class, 'Kelp');
+        eval "use Kelp::Base 'Kelp';";
         *{"Kelp::Routes::kelpx_appbuilder"} = sub { KelpX::AppBuilder::Object->new(shift); };
     }
     if (@opts and $opts[0] eq 'Base') {

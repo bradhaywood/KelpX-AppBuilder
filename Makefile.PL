@@ -13,10 +13,10 @@ WriteMakefile(
 
     PREREQ_PM       => {
         'Kelp'      => 0,
+        'Import::Into' = 0,
         'Module::Find' => 0,
         'Kelp::Module::Template::Toolkit' => 0,
         'File::ShareDir' => 0,
         'Plack::Middleware::Static' => 0,
-        'true' => 0,
     },        
 );
