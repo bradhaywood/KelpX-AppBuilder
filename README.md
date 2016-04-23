@@ -15,7 +15,6 @@ This launches your main application, allowing you to attach other ones onto it
 ```perl
 package BaseApp;
 
-use Kelp::Base 'Kelp';
 use KelpX::AppBuilder;
 
 sub build {
@@ -54,7 +53,6 @@ Don't forget to include the absolute path to your controllers (ie: Using the + s
 ```perl
 package TestApp;
 
-use Kelp::Base 'Kelp';
 use KelpX::AppBuilder;
 
 sub maps {
