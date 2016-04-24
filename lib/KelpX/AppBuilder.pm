@@ -19,6 +19,10 @@ sub import {
         eval "use Kelp::Routes";
         Kelp::Base->import::into($class, 'Kelp');
         *{"Kelp::Routes::kelpx_appbuilder"} = sub { KelpX::AppBuilder::Object->new(shift); };
+        *{"${class}::detach"} = sub {
+            my ($shelf, $file) = @_;
+            $shelf->template($file, $shelf->stash);
+        };
     }
     if (@opts and $opts[0] eq 'Base') {
 
@@ -238,6 +242,20 @@ templates.
 
 This is probably your best option for now, as KelpX::AppBuilder does not have a safe way to load app 
 configuration just yet (working on it!).
+
+=head2 Automatically include stash when rendering template
+
+One thing I hate doing is retyping the same thing over and over again, like adding the stash to the 
+template for example
+  
+  $self->template('file.tt', $self->stash);
+
+So KelpX::AppBuilder now comes with a C<detach> method, which works the exact same way as C<template>, but 
+will automatically add the stash items for you, so all you need to do is
+
+  $self->detach('file.tt');
+
+It's a minor shortcut, but saved me quite a few key strokes already.
 
 =head1 PLEASE NOTE
 

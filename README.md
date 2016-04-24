@@ -93,6 +93,24 @@ templates.
 This is probably your best option for now, as KelpX::AppBuilder does not have a safe way to load app 
 configuration just yet (working on it!).
 
+## Automatically include stash when rendering template
+
+One thing I hate doing is retyping the same thing over and over again, like adding the stash to the 
+template for example
+
+```perl
+$self->template('file.tt', $self->stash);
+```
+
+So KelpX::AppBuilder now comes with a `detach` method, which works the exact same way as `template`, but 
+will automatically add the stash items for you, so all you need to do is
+
+```perl
+$self->detach('file.tt');
+```
+
+It's a minor shortcut, but saved me quite a few key strokes already.
+
 # PLEASE NOTE
 
 This module is still a work in progress, so I would advise against using KelpX::AppBuilder in a production environment. I'm still looking at ways to make KelpX::AppBuilder more user friendly, but unfortunately reusing an application is not a simple process :-)
