@@ -18,7 +18,7 @@ sub import {
         no strict 'refs';
         eval "use Kelp::Routes";
         Kelp::Base->import::into($class, 'Kelp');
-        *{"Kelp::Routes::kelpx_appbuilder"} = sub { KelpX::AppBuilder::Object->new(shift); };
+        *{"Kelp::Routes::kelpx_appbuilder"} = sub { KelpX::AppBuilder::Object->new(shift, shift); };
         *{"${class}::detach"} = sub {
             my ($shelf, $file) = @_;
             $shelf->template($file, $shelf->stash);
@@ -42,7 +42,14 @@ sub import {
                 my $r    = $self->routes;
 
                 my $maps = $class->maps;
+                my $classpath = $class;
+                $classpath =~ s/Oboo:://g;
+                $classpath    =~ s/::/-/g;
+                $classpath = lc "/${classpath}";
                 for my $method (keys %$maps) {
+                    $method = "${classpath}${method}";
+                    #TODO: Check for array ref (ie: ["POST" => url]
+
                     $r->add($method, $maps->{$method});
                 }
             };
@@ -124,7 +131,7 @@ sub load_controllers {
 }
 
 sub add_maps {
-    my ($self, $r) = @_;
+    my ($self, $r, $from) = @_;
     {
         my $class = caller;
         no strict 'refs';
@@ -140,17 +147,38 @@ sub add_maps {
             *{"${class}::${method}"} = *{"${mod}::${method}"}
                 unless grep { $_ eq $method } @no_import;
         }
+
         my $maps = $mod->maps;
-        foreach my $path (keys %$maps) {
-            if ($path eq 'auto') {
-                my $root = "${mod}::Controller::Root";
-                $r->add('/:page' => { to => $root->can('auto'), bridge => 1 });
-                next;
+        if ($from) {
+            my $classpath = $mod;
+            my $origclass = $from; 
+            $classpath =~ s/${origclass}:://g;
+            $classpath    =~ s/::/-/g;
+            $classpath = lc "/${classpath}";
+            foreach my $path (keys %$maps) {
+                my $abspath = "${classpath}${path}";
+                if ($path eq 'auto') {
+                    my $root = "${mod}::Controller::Root";
+                    $r->add('(.+)' => { to => $root->can('auto'), bridge => 1 });
+                    next;
+                }
+
+                say "-> Adding route: $abspath" if $ENV{KELPX_APPBUILDER_DEBUG};
+                $r->add($abspath, $maps->{$path});
             }
-
-            $r->add($path, $maps->{$path});
         }
+        else {
+             foreach my $path (keys %$maps) {
+                if ($path eq 'auto') {
+                    my $root = "${mod}::Controller::Root";
+                    $r->add('(.+)' => { to => $root->can('auto'), bridge => 1 });
+                    next;
+                }
 
+                say "-> Adding route: $path" if $ENV{KELPX_APPBUILDER_DEBUG};
+                $r->add($path, $maps->{$path});
+            }
+        }
     }
 }
 
@@ -256,6 +284,35 @@ will automatically add the stash items for you, so all you need to do is
   $self->detach('file.tt');
 
 It's a minor shortcut, but saved me quite a few key strokes already.
+
+=head2 Beginning URL building
+
+What this means is KelpX::AppBuilder will automatically append the childs app name onto the beginning of the route url. As an example, you may have the following Kelp apps: C<BaseApp> and C<BaseApp::ChildApp>. Turning on URL building will append C</childapp> to the beginning of every URL in that module.
+
+  package BaseApp::ChildApp;
+
+  use KelpX::AppBuilder;
+
+  sub maps {
+      {
+          '/users', '+BaseApp::ChildApp::Controller::Users::list',
+      }
+  }
+
+Instead of the route being C</users> in the above example, it will actually become C</childapp/users>. As I'm writing a modular web app, I wanted each modules route to stay in their respective namespace, but I didn't want to type it out every time.
+It will not do this by default, because not everyone will want it. If you want to add this feature, when you call C<kelpx_appbuilder>, just pass it the baseapps package name as a parameter and it'll do the rest.
+
+  package BaseApp;
+
+  use KelpX::AppBuilder;
+
+  sub build {
+      my ($self) = @_;
+      my $routes = $self->routes;
+      $routes->kelpx_addbuilder(__PACKAGE__)->add_maps(qw/BaseApp::ChildApp/);
+  }
+
+And that's all you literally need to do! To make sure it's loaded them correctly, just run plackup with the environment variable C<KELPX_APPBUILDER_DEBUG=1> and it will display the routes loaded via C<add_maps>.
 
 =head1 PLEASE NOTE
 

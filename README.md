@@ -111,6 +111,39 @@ $self->detach('file.tt');
 
 It's a minor shortcut, but saved me quite a few key strokes already.
 
+## Beginning URL building
+
+What this means is KelpX::AppBuilder will automatically append the childs app name onto the beginning of the route url. As an example, you may have the following Kelp apps: `BaseApp` and `BaseApp::ChildApp`. Turning on URL building will append `/childapp` to the beginning of every URL in that module.
+
+```perl
+package BaseApp::ChildApp;
+
+use KelpX::AppBuilder;
+
+sub maps {
+    {
+        '/users', '+BaseApp::ChildApp::Controller::Users::list',
+    }
+}
+```
+
+Instead of the route being `/users` in the above example, it will actually become `/childapp/users`. As I'm writing a modular web app, I wanted each modules route to stay in their respective namespace, but I didn't want to type it out every time.
+It will not do this by default, because not everyone will want it. If you want to add this feature, when you call `kelpx_appbuilder`, just pass it the baseapps package name as a parameter and it'll do the rest.
+
+```perl
+package BaseApp;
+
+use KelpX::AppBuilder;
+
+sub build {
+    my ($self) = @_;
+    my $routes = $self->routes;
+    $routes->kelpx_addbuilder(__PACKAGE__)->add_maps(qw/BaseApp::ChildApp/);
+}
+```
+
+And that's all you literally need to do! To make sure it's loaded them correctly, just run plackup with the environment variable `KELPX_APPBUILDER_DEBUG=1` and it will display the routes loaded via `add_maps`.
+
 # PLEASE NOTE
 
 This module is still a work in progress, so I would advise against using KelpX::AppBuilder in a production environment. I'm still looking at ways to make KelpX::AppBuilder more user friendly, but unfortunately reusing an application is not a simple process :-)
