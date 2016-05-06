@@ -9,6 +9,9 @@ use File::ShareDir 'module_dir';
 use Import::Into;
 use Kelp::Base;
 
+use Moo;
+with 'KelpX::AppBuilder::Routes';
+
 our $VERSION = '0.005';
 
 sub import {
@@ -18,42 +21,14 @@ sub import {
         no strict 'refs';
         eval "use Kelp::Routes";
         Kelp::Base->import::into($class, 'Kelp');
-        *{"Kelp::Routes::kelpx_appbuilder"} = sub { KelpX::AppBuilder::Object->new(shift, shift); };
+        *{"Kelp::Routes::kelpx_appbuilder"} = sub {
+            my ($me) = @_;
+            KelpX::AppBuilder::Object->new(shift, shift);
+        };
         *{"${class}::detach"} = sub {
             my ($shelf, $file) = @_;
             $shelf->template($file, $shelf->stash);
         };
-    }
-    if (@opts and $opts[0] eq 'Base') {
-
-        my @controllers = useall "${class}::Controller";
-        {
-            no strict 'refs';
-            for my $c (@controllers) {
-                eval "use $c" unless scalar keys %{"${c}::"};
-                say "=> Loaded controller $c";
-            }
-        }
-
-        {
-            no strict 'refs';
-            *{"${class}::build"} = sub {
-                my ($self) = @_;
-                my $r    = $self->routes;
-
-                my $maps = $class->maps;
-                my $classpath = $class;
-                $classpath =~ s/Oboo:://g;
-                $classpath    =~ s/::/-/g;
-                $classpath = lc "/${classpath}";
-                for my $method (keys %$maps) {
-                    $method = "${classpath}${method}";
-                    #TODO: Check for array ref (ie: ["POST" => url]
-
-                    $r->add($method, $maps->{$method});
-                }
-            };
-        }
     }
 
     if (@opts and $opts[0] eq 'Config') {
@@ -131,7 +106,9 @@ sub load_controllers {
 }
 
 sub add_maps {
-    my ($self, $r, $from) = @_;
+    my ($self, $r, $args) = @_;
+    my $from = $args->{from}||undef;
+    #my $acl  = $args->{acl}||undef;
     {
         my $class = caller;
         no strict 'refs';
@@ -142,7 +119,7 @@ sub add_maps {
             exit 3;
         }
 
-        my @no_import = qw(new build import);
+        my @no_import = qw(new build import add_maps);
         foreach my $method (keys %{"${mod}::"}) {
             *{"${class}::${method}"} = *{"${mod}::${method}"}
                 unless grep { $_ eq $method } @no_import;
@@ -151,7 +128,7 @@ sub add_maps {
         my $maps = $mod->maps;
         if ($from) {
             my $classpath = $mod;
-            my $origclass = $from; 
+            my $origclass = ref $from ? ref $from : $from; 
             $classpath =~ s/${origclass}:://g;
             $classpath    =~ s/::/-/g;
             $classpath = lc "/${classpath}";
@@ -164,7 +141,7 @@ sub add_maps {
                 }
 
                 say "-> Adding route: $abspath" if $ENV{KELPX_APPBUILDER_DEBUG};
-                $r->add($abspath, $maps->{$path});
+                $self->add_route($from, $r, $abspath, $maps->{$path});
             }
         }
         else {
@@ -176,9 +153,11 @@ sub add_maps {
                 }
 
                 say "-> Adding route: $path" if $ENV{KELPX_APPBUILDER_DEBUG};
-                $r->add($path, $maps->{$path});
+                $self->add_route($from, $r, $path, $maps->{$path});
             }
         }
+
+        #$self->postprocess_routes($r);
     }
 }
 
